@@ -4,6 +4,7 @@ const app = express();
 require('dotenv').config();
 const port = process.env.port || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 
 // middleware
 
@@ -32,37 +33,37 @@ async function run() {
         const userCollection = client.db("SpeedyWheel").collection("users");
         const carCollection = client.db("SpeedyWheel").collection("cars");
         const rentalCollection = client.db("SpeedyWheel").collection("rented-cars");
-        
+
         // user related api
-        app.post("/users", async(req , res) => {
+        app.post("/users", async (req, res) => {
             const user = req.body;
-            const query = { email: user.email}
+            const query = { email: user.email }
             const existingUser = await userCollection.findOne(query);
-            if(existingUser){
-                return res.send({ message: 'user already exists'})
+            if (existingUser) {
+                return res.send({ message: 'user already exists' })
             }
             const result = await userCollection.insertOne(user);
             res.send(result);
         })
 
         // cars model related api
-        app.get('/cars', async(req, res) =>{
+        app.get('/cars', async (req, res) => {
             const result = await carCollection.find().toArray();
             res.send(result)
         })
- 
+
         // specific cars api
-        app.get('/cars/:carModel', async(req, res) =>{
+        app.get('/cars/:carModel', async (req, res) => {
             const carName = req.params.carModel;
             // console.log(carName);
-            const query = {model: carName}
+            const query = { model: carName }
             const result = await carCollection.findOne(query)
             // console.log(result);
             res.send(result);
         })
 
         // save data for car rent
-        app.post("/cart-rent", async (req, res) =>{
+        app.post("/cart-rent", async (req, res) => {
             const carRent = req.body;
             // console.log(carRent);
             const result = await rentalCollection.insertOne(carRent)
@@ -70,13 +71,27 @@ async function run() {
         })
 
         // get booking data
-        app.get("/booked/:email", async (req, res) =>{
+        app.get("/booked/:email", async (req, res) => {
             const user = req.params.email;
             const query = { email: user };
             const result = await rentalCollection.find(query).toArray();
             res.send(result)
         })
-        
+
+        // create payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ['card']
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
