@@ -64,8 +64,16 @@ async function run() {
         // save data for car rent
         app.post("/cart-rent", async (req, res) =>{
             const carRent = req.body;
-            console.log(carRent);
+            // console.log(carRent);
             const result = await rentalCollection.insertOne(carRent)
+            res.send(result)
+        })
+
+        // get booking data
+        app.get("/booked/:email", async (req, res) =>{
+            const user = req.params.email;
+            const query = { email: user };
+            const result = await rentalCollection.find(query).toArray();
             res.send(result)
         })
         
