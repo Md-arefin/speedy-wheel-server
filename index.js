@@ -49,7 +49,16 @@ async function run() {
             const result = await carCollection.find().toArray();
             res.send(result)
         })
-
+ 
+        // specific cars api
+        app.get('/cars/:carModel', async(req, res) =>{
+            const carName = req.params.carModel;
+            // console.log(carName);
+            const query = {model: carName}
+            const result = await carCollection.findOne(query)
+            // console.log(result);
+            res.send(result);
+        })
         
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
