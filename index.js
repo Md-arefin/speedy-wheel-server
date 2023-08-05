@@ -31,6 +31,7 @@ async function run() {
 
         const userCollection = client.db("SpeedyWheel").collection("users");
         const carCollection = client.db("SpeedyWheel").collection("cars");
+        const rentalCollection = client.db("SpeedyWheel").collection("rented-cars");
         
         // user related api
         app.post("/users", async(req , res) => {
@@ -58,6 +59,14 @@ async function run() {
             const result = await carCollection.findOne(query)
             // console.log(result);
             res.send(result);
+        })
+
+        // save data for car rent
+        app.post("/cart-rent", async (req, res) =>{
+            const carRent = req.body;
+            console.log(carRent);
+            const result = await rentalCollection.insertOne(carRent)
+            res.send(result)
         })
         
         // Send a ping to confirm a successful connection
