@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 const port = process.env.port || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 
 // middleware
@@ -33,6 +33,7 @@ async function run() {
         const userCollection = client.db("SpeedyWheel").collection("users");
         const carCollection = client.db("SpeedyWheel").collection("cars");
         const rentalCollection = client.db("SpeedyWheel").collection("rented-cars");
+        const paymentCollection = client.db("SpeedyWheel").collection('payments');
 
         // user related api
         app.post("/users", async (req, res) => {
@@ -70,10 +71,19 @@ async function run() {
             res.send(result)
         })
 
-        // get booking data
+        // get booking data with email
         app.get("/booked/:email", async (req, res) => {
             const user = req.params.email;
             const query = { email: user };
+            const result = await rentalCollection.find(query).toArray();
+            res.send(result)
+        })
+
+        // get booking data with id
+        app.get("/car-booked/:id", async (req, res) => {
+            const id = req.params.id;
+            // console.log(id)
+            const query = { _id: new ObjectId(id) };
             const result = await rentalCollection.find(query).toArray();
             res.send(result)
         })
@@ -91,6 +101,13 @@ async function run() {
             res.send({
                 clientSecret: paymentIntent.client_secret
             })
+        })
+
+        // payment related api
+        app.post('/payments', async(req, res)=>{
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            res.send(result);
         })
 
         // Send a ping to confirm a successful connection
