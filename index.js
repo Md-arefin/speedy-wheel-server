@@ -95,7 +95,7 @@ async function run() {
             // console.log(price,"amount", amount)
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
-                currency: "usd", 
+                currency: "usd",
                 payment_method_types: ['card']
             })
             res.send({
@@ -104,16 +104,30 @@ async function run() {
         })
 
         // payment related api
-        app.post('/payments', async(req, res)=>{
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
             res.send(result);
         })
 
-        app.get('/rented-car/:email', async (req, res) =>{
+        app.get('/rented-car/:email', async (req, res) => {
             const email = req.params.email;
-            const query = {email: email}
+            const query = { email: email }
             const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        })
+        app.get('/rented-car/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await paymentCollection.find(query).sort()
+            res.send(result);
+        })
+
+        app.delete('/rented-car/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const query = { _id: new ObjectId(id) };
+            const result = await rentalCollection.deleteOne(query);
             res.send(result);
         })
 
