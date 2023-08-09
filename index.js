@@ -91,7 +91,7 @@ async function run() {
         // create payment intent
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
-            const amount = price * 100;
+            const amount = parseFloat(price * 100).toFixed(0);
             // console.log(price,"amount", amount)
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
@@ -107,6 +107,8 @@ async function run() {
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
+            const query = { _id: new ObjectId(payment._id)};
+            const deleteResults = await rentalCollection.deleteOne(query);
             res.send(result);
         })
 
@@ -125,7 +127,7 @@ async function run() {
 
         app.delete('/rented-car/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id)
+            // console.log(id)
             const query = { _id: new ObjectId(id) };
             const result = await rentalCollection.deleteOne(query);
             res.send(result);
