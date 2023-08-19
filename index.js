@@ -5,11 +5,32 @@ require('dotenv').config();
 const port = process.env.port || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
+const jwt = require('jsonwebtoken');
+
 
 // middleware
 
 app.use(cors());
 app.use(express.json());
+
+// verify JWT
+
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'Unauthorized access' });
+    }
+
+    const token = authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+        if (error){
+            return res.status(403).send({ error: true, message: 'Unauthorized access'})
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 
 // mongoDB Start
 
@@ -34,6 +55,16 @@ async function run() {
         const carCollection = client.db("SpeedyWheel").collection("cars");
         const rentalCollection = client.db("SpeedyWheel").collection("rented-cars");
         const paymentCollection = client.db("SpeedyWheel").collection('payments');
+
+        // JWT
+
+        app.post('/jwt', (req, res) =>{
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '7d'
+            });
+            res.send({token});
+        })
 
         // user related api
         app.post("/users", async (req, res) => {
@@ -64,9 +95,17 @@ async function run() {
         })
 
         // save data for car rent
-        app.post("/cart-rent", async (req, res) => {
+        app.post("/cart-rent", verifyJWT, async (req, res) => {
             const carRent = req.body;
-            // console.log(carRent);
+            const email = req.body.email;
+            console.log( email);
+
+            const decodedEmail = req.decoded.email;
+
+            if(email !== decodedEmail){
+              return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+
             const result = await rentalCollection.insertOne(carRent)
             res.send(result)
         })
@@ -107,7 +146,7 @@ async function run() {
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
-            const query = { _id: new ObjectId(payment._id)};
+            const query = { _id: new ObjectId(payment._id) };
             const deleteResults = await rentalCollection.deleteOne(query);
             res.send(result);
         })
