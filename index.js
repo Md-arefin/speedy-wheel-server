@@ -66,7 +66,7 @@ async function run() {
             res.send({token});
         })
 
-        // user related api
+        // user related api 
         app.post("/users", async (req, res) => {
             const user = req.body;
             const query = { email: user.email }
@@ -82,6 +82,14 @@ async function run() {
         app.get('/cars', async (req, res) => {
             const result = await carCollection.find().toArray();
             res.send(result)
+        })
+
+        // get specific car
+        app.get('/cars/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }; 
+            const result = await carCollection.findOne(query);
+            res.send(result);
         })
 
         // specific cars api
