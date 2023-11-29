@@ -165,18 +165,26 @@ async function run() {
             const result = await paymentCollection.find(query).toArray();
             res.send(result);
         })
-        app.get('/rented-car/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email: email }
-            const result = await paymentCollection.find(query).sort()
-            res.send(result);
-        })
 
         app.delete('/rented-car/:id', async (req, res) => {
             const id = req.params.id;
             // console.log(id)
             const query = { _id: new ObjectId(id) };
             const result = await rentalCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        app.patch('/carRented/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const option = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    booked: true,
+                },
+            };
+            const result = await carCollection.updateOne(filter, updateDoc, option);
             res.send(result);
         })
 
